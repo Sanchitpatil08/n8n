@@ -1,0 +1,557 @@
+{
+  "name": "Email Classifier Web",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -384,
+        -64
+      ],
+      "id": "833888ee-6e20-4bfd-b526-a0c1ab8fb6c6",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "HhPH03ufogOnGZxx",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $('Gmail Trigger').item.json.snippet }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "High Priority",
+              "description": "Emails requiring urgent response or action"
+            },
+            {
+              "category": "Customer Support",
+              "description": "mails related to customer service, tickets, or support issues"
+            },
+            {
+              "category": "Finance/Billing",
+              "description": "Invoices, receipts, payments, or anything related to money"
+            },
+            {
+              "category": "Personal ",
+              "description": "Personal messages, greetings, or casual conversations"
+            },
+            {
+              "category": "Promotional",
+              "description": " Marketing, newsletters, offers, or sales messages"
+            },
+            {
+              "category": "Spam ",
+              "description": "Unsolicited or irrelevant emails"
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "You are an email classification expert.\n\nClassify the given email content into **one of the following categories**:\n\n1. High Priority – Emails requiring urgent response or action\n2. Customer Support – Emails related to customer service, tickets, or support issues\n3. Finance/Billing – Invoices, receipts, payments, or anything related to money\n4. Personal – Personal messages, greetings, or casual conversations\n5. Promotional – Marketing, newsletters, offers, or sales messages\n6. Spam – Unsolicited or irrelevant emails\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        -240
+      ],
+      "id": "b9b528c9-7f79-4e27-84aa-71cdf5ed85fd",
+      "name": "Text Classifier"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.snippet }}",
+        "options": {
+          "systemMessage": "You are a smart email processing agent connected to a Google Sheet. Follow the instructions below carefully for each execution:\n\n1. **Objective**: Process an incoming email and determine if it has already been logged in the Google Sheet using the email’s unique ID.\n\n2. **Step 1: Check for Existing Entry**\n   - Use the Google Sheets \"Get\" tool to retrieve the list of all entries.\n   - Each entry has an \"Email ID\" column (or similar).\n   - Search through the sheet to see if the current email's ID already exists.\n   - If the ID **is found**, do nothing. The email has already been logged.\n\n3. **Step 2: Append if Not Present**\n   - If the ID **is not found**, proceed to extract and map the following information:\n     - Email ID\n     - Sender's email address\n     - Subject of the email\n     - Label for classification (which you determine yourself from the content)\n     - A link to the email (or message ID as a substitute)\n\n4. **Step 3: Format and Append**\n   - Format the extracted data according to the Google Sheet's structure:\n     ```\n     | Name | Sender Email | Label | Subject | Email Link |\n     ```\n     - \"Name\" can be left blank or derived from the email address if needed.\n     - Use the \"Append\" Google Sheet tool to write this new row into the sheet.\n\n5. **Final Step: Output**\n   - After logging (or skipping), return the `Label` you assigned for further use (e.g., Gmail labeling or Telegram notification).\n\nReturn only the label name as plain text in the final response.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        -208,
+        -64
+      ],
+      "id": "17ba8eab-2741-483f-8cbe-441737352fd2",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -320,
+        208
+      ],
+      "id": "614c5900-6cbe-4168-afee-0ff6287b734b",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "XopY14XMu0s95kgV",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -112,
+        160
+      ],
+      "id": "16dc53f5-9d44-4069-a3ae-dfb262f4029f",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1UEnXQ_PPfAZj9qq3MSf0p2DlOICMCCmfqCoTAq66MsU",
+          "mode": "list",
+          "cachedResultName": "Email Classifier",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UEnXQ_PPfAZj9qq3MSf0p2DlOICMCCmfqCoTAq66MsU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UEnXQ_PPfAZj9qq3MSf0p2DlOICMCCmfqCoTAq66MsU/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        -32,
+        368
+      ],
+      "id": "48d77ab4-c948-46cb-887a-48edab08d4b4",
+      "name": "Get row(s) in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Q6cYdXQrfgiRm8y2",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_5464053114580360379"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        800,
+        -736
+      ],
+      "id": "f096493a-832a-499d-968c-55b2868ddc6f",
+      "name": "High Priority",
+      "webhookId": "fbec0427-e25a-4978-b0ce-356db4e33ddf",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "HhPH03ufogOnGZxx",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_4952572893371519399"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        800,
+        -544
+      ],
+      "id": "009ae55e-50bc-41be-aa7d-9e7dee67636b",
+      "name": "Costumer_Support",
+      "webhookId": "fbec0427-e25a-4978-b0ce-356db4e33ddf",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "HhPH03ufogOnGZxx",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_2328336080890941669"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        800,
+        -320
+      ],
+      "id": "6b89a7a3-27ca-4411-bb88-b510b668a210",
+      "name": "Finance/Billing",
+      "webhookId": "fbec0427-e25a-4978-b0ce-356db4e33ddf",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "HhPH03ufogOnGZxx",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_8723458258524441586"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        800,
+        -112
+      ],
+      "id": "7d87605f-5169-4ee8-a58d-a0007525da7e",
+      "name": "Personal",
+      "webhookId": "fbec0427-e25a-4978-b0ce-356db4e33ddf",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "HhPH03ufogOnGZxx",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_2970603774122460799"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        800,
+        96
+      ],
+      "id": "5387695e-034d-4571-8e72-234d32818111",
+      "name": "Promotional",
+      "webhookId": "fbec0427-e25a-4978-b0ce-356db4e33ddf",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "HhPH03ufogOnGZxx",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_6967873399241709597"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        800,
+        304
+      ],
+      "id": "ac82242e-c155-4b61-a426-5d73e84c6940",
+      "name": "Spam",
+      "webhookId": "fbec0427-e25a-4978-b0ce-356db4e33ddf",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "HhPH03ufogOnGZxx",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        320,
+        224
+      ],
+      "id": "b254d75c-8623-4fe5-997c-bb5bb1508909",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "PYc8AuoI73Yt1Kh4",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1UEnXQ_PPfAZj9qq3MSf0p2DlOICMCCmfqCoTAq66MsU",
+          "mode": "list",
+          "cachedResultName": "Email Classifier",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UEnXQ_PPfAZj9qq3MSf0p2DlOICMCCmfqCoTAq66MsU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UEnXQ_PPfAZj9qq3MSf0p2DlOICMCCmfqCoTAq66MsU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email's Id": "={{ $('Gmail Trigger').item.json.id }}",
+            "Senders Email": "={{ $('Gmail Trigger').item.json.From }}",
+            "Subject": "={{ $('Gmail Trigger').item.json.Subject }}",
+            "Label": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Label', ``, 'string') }}"
+          },
+          "matchingColumns": [
+            "Email's Id"
+          ],
+          "schema": [
+            {
+              "id": "Email's Id",
+              "displayName": "Email's Id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Senders Email",
+              "displayName": "Senders Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Label",
+              "displayName": "Label",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        160,
+        224
+      ],
+      "id": "1e804afb-4d12-4f65-ba33-ca30b3123dbf",
+      "name": "Append or update row in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Q6cYdXQrfgiRm8y2",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Classifier": {
+      "main": [
+        [
+          {
+            "node": "High Priority",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Costumer_Support",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finance/Billing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Personal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Promotional",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Spam",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "004d1038-09a3-4a77-b4bc-cdd94b4601b5",
+  "meta": {
+    "instanceId": "a050a933cf254a1bc1b812ee8a0fce549597bf172c2e4ea92f540fcc33ac97dd"
+  },
+  "id": "FBDrfmKUAjshZcEE",
+  "tags": [
+    {
+      "name": "Email Classification",
+      "id": "Sl7tkGWVMVGMjBPS",
+      "createdAt": "2025-08-02T09:41:10.827Z",
+      "updatedAt": "2025-08-02T09:41:10.827Z"
+    }
+  ]
+}
